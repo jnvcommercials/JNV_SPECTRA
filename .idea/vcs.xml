@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/event_management_admin/event_management_admin" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/event_management_backend_final/event_management_backend_final" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jnv_spectra_website/jnv_spectra_website" vcs="Git" />
+  </component>
+</project>
