@@ -1,0 +1,54 @@
+name: Code Quality & Security
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: NPM Audit - Backend
+        working-directory: event_management_backend_final/event_management_backend_final
+        run: |
+          npm audit --audit-level=high || true
+
+      - name: NPM Audit - Admin
+        working-directory: event_management_admin/event_management_admin
+        run: |
+          npm audit --audit-level=high || true
+
+      - name: NPM Audit - Website
+        working-directory: jnv_spectra_website/jnv_spectra_website
+        run: |
+          npm audit --audit-level=high || true
+
+      - name: NPM Audit - Checkout
+        working-directory: jnv-checkout-app/jnv-checkout-app
+        run: |
+          npm audit --audit-level=high || true
