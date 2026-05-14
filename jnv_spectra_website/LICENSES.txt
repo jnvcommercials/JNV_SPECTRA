@@ -1,0 +1,41 @@
+# Third-Party Software Licenses
+
+This project incorporates materials from several open source projects. Below is a list of third-party components and their respective licenses.
+
+## React - MIT License
+Copyright (c) Meta Platforms, Inc. and affiliates.
+https://github.com/facebook/react/blob/main/LICENSE
+
+## Vite - MIT License
+Copyright (c) 2019-present, Yuxi (Evan) You and Vite contributors
+https://github.com/vitejs/vite/blob/main/LICENSE
+
+## TypeScript - Apache License 2.0
+Copyright (c) Microsoft Corporation
+https://github.com/microsoft/TypeScript/blob/main/LICENSE.txt
+
+## Tailwind CSS - MIT License
+Copyright (c) Tailwind Labs, Inc.
+https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE
+
+## shadcn/ui - MIT License
+Copyright (c) 2023 shadcn
+https://github.com/shadcn/ui/blob/main/LICENSE.md
+
+## Framer Motion - MIT License
+Copyright (c) 2018 Framer B.V.
+https://github.com/framer/motion/blob/main/LICENSE.md
+
+## TanStack Query - MIT License
+Copyright (c) 2021-present Tanner Linsley
+https://github.com/TanStack/query/blob/main/LICENSE
+
+## React Hook Form - MIT License
+Copyright (c) 2019-present Beier(Bill) Luo
+https://github.com/react-hook-form/react-hook-form/blob/master/LICENSE
+
+## Zod - MIT License
+Copyright (c) 2020 Colin McDonnell
+https://github.com/colinhacks/zod/blob/master/LICENSE
+
+Note: This is not an exhaustive list. For full license details of all dependencies, please check the node_modules directory or the respective project websites. 
