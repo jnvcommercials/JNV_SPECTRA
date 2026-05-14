@@ -63,8 +63,34 @@ AWS Console → Billing → Budgets → Create budget (set to $100/month)
    - (Optional) Add tags: `Environment: production`, `Project: jnv-spectra`
 
 3. **Application and OS Images:**
-   - Search: `ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server`
-   - Click Select
+   
+   **Method 1: Quick AMI Search (Recommended)**
+   - Click "Browse more AMIs" 
+   - In search box, type: `ubuntu-jammy-22.04`
+   - Filter by: Canonical (Publisher column)
+   - Look for image with description: `Canonical, Ubuntu, 22.04 LTS, amd64`
+   - It should show something like: `ami-0c55b159cbfafe1f0` or similar
+   - Click "Select"
+   
+   **Method 2: Manual AMI Lookup**
+   - Go to EC2 Dashboard → AMI Catalog (left sidebar)
+   - Search: `Ubuntu 22.04 LTS`
+   - Filter: Free tier eligible
+   - Published by: `Canonical`
+   - Select the latest Ubuntu 22.04 LTS (HVM, SSD)
+   
+   **Method 3: Community AMI Search**
+   - Click "Community AMIs"
+   - Search: `ubuntu-jammy-22.04-amd64-server`
+   - Select the latest version from Canonical
+   
+   **Method 4: Direct Link (If available)**
+   - Go to: https://cloud-images.ubuntu.com/locator/ec2/
+   - Select: Ubuntu 22.04 LTS (Jammy)
+   - Region: us-east-1
+   - Type: hvm-ssd
+   - Copy the AMI ID (starts with `ami-`)
+   - In AWS: Click "Community AMIs" and paste the AMI ID
 
 4. **Instance Type:**
    - Select `t3.medium` (recommended for production)
@@ -138,6 +164,42 @@ ssh -i jnv-backend-key.pem ubuntu@your-instance-ip
 # Or using Elastic IP (if allocated)
 ssh -i jnv-backend-key.pem ubuntu@your-elastic-ip
 ```
+
+### Step 3b: Troubleshooting - Can't Find Ubuntu Image?
+
+**If you can't find the Ubuntu 22.04 LTS image:**
+
+1. **Check filters:**
+   - Make sure you cleared any previous filters
+   - Verify "Quick Start" tab is selected
+   - Look for "Free tier eligible" checkbox (optional but recommended)
+
+2. **Alternative Ubuntu versions:**
+   - Ubuntu 20.04 LTS also works (older but stable)
+   - Ubuntu 24.04 LTS (newest, also supported)
+   
+3. **Manual AMI selection (Easiest):**
+   - In AMI search, type: `ubuntu`
+   - Look for images published by: **Canonical**
+   - Select the most recent **22.04 LTS** or **20.04 LTS**
+   - Status should be: ✓ Available
+
+4. **If still not finding it:**
+   - Try this direct search: `ami-0c2d3e4d`
+   - Or search: `Canonical Ubuntu`
+   - Pick any recent LTS version (Long Term Support)
+
+5. **Quick Reference AMI IDs (US-EAST-1) - May vary:**
+   - Ubuntu 22.04 LTS: `ami-0c55b159cbfafe1f0` (typical)
+   - Ubuntu 20.04 LTS: `ami-0c94855ba95c574c8` (typical)
+   - *Note: These may change, search Canonical's latest*
+
+**After selecting image:**
+- You should see version info: "Canonical, Ubuntu, 22.04 LTS, amd64"
+- Click the image
+- Click "Select" button
+
+---
 
 ### Step 4: Initial Server Setup
 
