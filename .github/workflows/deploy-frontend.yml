@@ -1,4 +1,4 @@
-name: Deploy Frontend Applications
+name: Deploy Frontend Applications to AWS S3 + CloudFront
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: event_management_admin/event_management_admin
+        working-directory: event_management_admin
 
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,6 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'event_management_admin/event_management_admin/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -50,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jnv_spectra_website/jnv_spectra_website
+        working-directory: jnv_spectra_website
 
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +59,6 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'jnv_spectra_website/jnv_spectra_website/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -78,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jnv-checkout-app/jnv-checkout-app
+        working-directory: jnv-checkout-app
 
     steps:
       - uses: actions/checkout@v4
@@ -88,7 +86,6 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'jnv-checkout-app/jnv-checkout-app/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -108,7 +105,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     defaults:
       run:
-        working-directory: event_management_admin/event_management_admin
+        working-directory: event_management_admin
 
     steps:
       - uses: actions/checkout@v4
@@ -127,14 +124,18 @@ jobs:
         env:
           VITE_API_BASE_URL: https://api.jnvspectra.com
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
-          working-directory: event_management_admin/event_management_admin
-          production: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to S3
+        run: aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_ADMIN }}/ --delete
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ADMIN }} --paths "/*"
 
   deploy-website:
     needs: test-website
@@ -142,7 +143,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     defaults:
       run:
-        working-directory: jnv_spectra_website/jnv_spectra_website
+        working-directory: jnv_spectra_website
 
     steps:
       - uses: actions/checkout@v4
@@ -161,14 +162,18 @@ jobs:
         env:
           VITE_API_BASE_URL: https://api.jnvspectra.com
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEBSITE }}
-          working-directory: jnv_spectra_website/jnv_spectra_website
-          production: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to S3
+        run: aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_WEBSITE }}/ --delete
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_WEBSITE }} --paths "/*"
 
   deploy-checkout:
     needs: test-checkout
@@ -176,7 +181,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     defaults:
       run:
-        working-directory: jnv-checkout-app/jnv-checkout-app
+        working-directory: jnv-checkout-app
 
     steps:
       - uses: actions/checkout@v4
@@ -195,11 +200,15 @@ jobs:
         env:
           VITE_API_BASE_URL: https://api.jnvspectra.com
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_CHECKOUT }}
-          working-directory: jnv-checkout-app/jnv-checkout-app
-          production: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to S3
+        run: aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_CHECKOUT }}/ --delete
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_CHECKOUT }} --paths "/*"
