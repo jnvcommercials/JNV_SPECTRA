@@ -50,16 +50,16 @@ const orderSchema = z.object({
   total_amount: z.number().min(0.01, { message: "Total amount is required and must be greater than 0" }),
   deposit_amount: z.number().min(0.01, { message: "Deposit amount is required and must be greater than 0" }),
   balance_amount: z.number().min(0, { message: "Balance amount cannot be negative" }),
-  order_details: z.object({
-    tax: z.number().min(0, { message: "Tax cannot be negative" }),
-    items: z.array(z.object({
-      name: z.string().min(1, { message: "Service name is required" }),
-      price: z.number().min(0.01, { message: "Price must be greater than 0" }),
-      quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
-    })),
-    total: z.number().min(0.01, { message: "Total must be greater than 0" }),
-    subtotal: z.number().min(0, { message: "Subtotal cannot be negative" }),
-  }),
+   order_details: z.object({
+     tax: z.number().min(0, { message: "Tax percentage cannot be negative" }).max(100, { message: "Tax percentage cannot exceed 100%" }),
+     items: z.array(z.object({
+       name: z.string().min(1, { message: "Service name is required" }),
+       price: z.number().min(0.01, { message: "Price must be greater than 0" }),
+       quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
+     })),
+     total: z.number().min(0.01, { message: "Total must be greater than 0" }),
+     subtotal: z.number().min(0, { message: "Subtotal cannot be negative" }),
+   }),
 }).refine((data) => {
   return data.deposit_amount + data.balance_amount === data.total_amount;
 }, {
@@ -118,28 +118,30 @@ export function OrderForm({ onSubmit, isLoading = false }: OrderFormProps) {
     updateAmounts();
   };
 
-  const updateAmounts = () => {
-    const items = form.getValues("order_details.items") || [];
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = form.getValues("order_details.tax") || 0;
-    const total = subtotal + tax;
-    
-    form.setValue("order_details.subtotal", subtotal, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
-    form.setValue("order_details.total", total, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
-    form.setValue("total_amount", total, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
-  };
+   const updateAmounts = () => {
+     const items = form.getValues("order_details.items") || [];
+     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+     const taxPercentage = form.getValues("order_details.tax") || 0;
+     // Calculate actual tax amount from percentage
+     const taxAmount = (taxPercentage / 100) * subtotal;
+     const total = subtotal + taxAmount;
+
+     form.setValue("order_details.subtotal", subtotal, {
+       shouldValidate: true,
+       shouldDirty: true,
+       shouldTouch: true
+     });
+     form.setValue("order_details.total", total, {
+       shouldValidate: true,
+       shouldDirty: true,
+       shouldTouch: true
+     });
+     form.setValue("total_amount", total, {
+       shouldValidate: true,
+       shouldDirty: true,
+       shouldTouch: true
+     });
+   };
 
   const handleSubmit = async (values: OrderFormValues) => {
     console.log('Form submitted with values:', values);
@@ -153,16 +155,35 @@ export function OrderForm({ onSubmit, isLoading = false }: OrderFormProps) {
     }
   };
 
-  const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const value = parseFloat(e.target.value) || 0;
-    form.setValue("order_details.tax", value, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
-    updateAmounts();
-  };
+   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+     e.preventDefault();
+     const value = parseFloat(e.target.value) || 0;
+
+     // Validate tax percentage is between 0 and 100
+     if (value > 100) {
+       form.setError("order_details.tax", {
+         type: "manual",
+         message: "Tax percentage cannot be greater than 100%"
+       });
+       return;
+     }
+
+     if (value < 0) {
+       form.setError("order_details.tax", {
+         type: "manual",
+         message: "Tax percentage cannot be negative"
+       });
+       return;
+     }
+
+     form.clearErrors("order_details.tax");
+     form.setValue("order_details.tax", value, {
+       shouldValidate: true,
+       shouldDirty: true,
+       shouldTouch: true
+     });
+     updateAmounts();
+   };
 
   const handleDepositChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('Deposit changed:', e.target.value);
@@ -397,24 +418,27 @@ export function OrderForm({ onSubmit, isLoading = false }: OrderFormProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
-                  control={form.control}
-                  name="order_details.tax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tax</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={field.value}
-                          onChange={handleTaxChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                   control={form.control}
+                   name="order_details.tax"
+                   render={({ field }) => (
+                     <FormItem>
+                       <FormLabel>Tax (%)</FormLabel>
+                       <FormControl>
+                         <Input
+                           type="number"
+                           min="0"
+                           max="100"
+                           step="0.01"
+                           placeholder="Enter tax percentage (0-100)"
+                           value={field.value}
+                           onChange={handleTaxChange}
+                         />
+                       </FormControl>
+                       <FormDescription>Enter tax percentage (e.g., 5 for 5%)</FormDescription>
+                       <FormMessage />
+                     </FormItem>
+                   )}
+                 />
 
                 <FormField
                   control={form.control}

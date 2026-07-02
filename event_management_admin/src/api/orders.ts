@@ -109,6 +109,12 @@ const CACHE_CONFIG = {
 
 // Convert form values to API format
 const formatOrderData = (values: OrderFormValues) => {
+  const subtotal = values.order_details.subtotal || 0;
+  const taxPercentage = values.order_details.tax || 0;
+  // Calculate actual tax amount from percentage
+  const taxAmount = (taxPercentage / 100) * subtotal;
+  const total = subtotal + taxAmount;
+
   return {
     customer_name: values.customer_name,
     email: values.email,
@@ -117,15 +123,16 @@ const formatOrderData = (values: OrderFormValues) => {
     event_time: values.event_time,
     service_type: values.service_type,
     order_details: {
-      tax: values.order_details.tax || 0,
+      tax_percentage: taxPercentage,
+      tax_amount: taxAmount,
       items: values.order_details.items || [],
-      subtotal: values.order_details.subtotal
+      subtotal: subtotal
     },
     payment_option: values.payment_option,
     order_status: values.order_status,
-    total_amount: values.order_details.subtotal + (values.order_details.tax || 0),
+    total_amount: total,
     deposit_amount: values.deposit_amount || 0,
-    balance_amount: (values.order_details.subtotal + (values.order_details.tax || 0)) - (values.deposit_amount || 0)
+    balance_amount: total - (values.deposit_amount || 0)
   };
 };
 

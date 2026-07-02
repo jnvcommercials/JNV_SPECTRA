@@ -348,17 +348,19 @@ const generateQuotationTemplate = (orderData) => {
       contact: orderData.contact_number,
     },
     orderDetails: {
-      serviceType: orderData.service_type,
-      eventDate: orderData.event_date,
-      items: orderData.order_details.items || [],
-      subtotal: orderData.order_details.subtotal || 0,
-      tax: orderData.order_details.tax || 0,
-      total: amount,
-      paymentType: paymentType,
-      depositAmount: orderData.deposit_amount,
-      balanceAmount: orderData.balance_amount,
-    },
-    paymentTerms: orderData.payment_option === 'online' 
+       serviceType: orderData.service_type,
+       eventDate: orderData.event_date,
+       items: orderData.order_details.items || [],
+       subtotal: orderData.order_details.subtotal || 0,
+       taxPercentage: orderData.order_details.tax_percentage || 0,
+       taxAmount: orderData.order_details.tax_amount || 0,
+       tax: orderData.order_details.tax_amount || 0, // For backward compatibility
+       total: amount,
+       paymentType: paymentType,
+       depositAmount: orderData.deposit_amount,
+       balanceAmount: orderData.balance_amount,
+     },
+    paymentTerms: orderData.payment_option === 'online'
       ? `${paymentType} Payment Link will be provided`
       : `${paymentType} Payment to be made offline`,
     validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
@@ -381,13 +383,15 @@ const generateInvoiceTemplate = (order) => {
       contact: order.contact_number,
     },
     orderDetails: {
-      serviceType: order.service_type,
-      eventDate: order.event_date,
-      items: order.order_details.items || [],
-      subtotal: order.order_details.subtotal || 0,
-      tax: order.order_details.tax || 0,
-      total: order.total_amount || 0,
-    },
+       serviceType: order.service_type,
+       eventDate: order.event_date,
+       items: order.order_details.items || [],
+       subtotal: order.order_details.subtotal || 0,
+       taxPercentage: order.order_details.tax_percentage || 0,
+       taxAmount: order.order_details.tax_amount || 0,
+       tax: order.order_details.tax_amount || 0, // For backward compatibility
+       total: order.total_amount || 0,
+     },
     paymentInfo: {
       status: 'Paid',
       method: order.payment_option === 'online' ? 'Online Payment' : 'Offline Payment',

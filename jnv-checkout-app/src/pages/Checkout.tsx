@@ -18,26 +18,28 @@ const PaypalIcon = () => (
 );
 
 interface Order {
-  id: string;
-  customer_name: string;
-  email: string;
-  event_date: string;
-  order_details: {
-    items: Array<{
-      name: string;
-      price: number;
-      quantity: number;
-    }>;
-    total: number;
-    subtotal: number;
-    tax: number;
-  };
-  total_amount: number;
-  deposit_amount: number;
-  balance_amount: number;
-  order_status: string;
-  balance_paid_at?: string;
-}
+   id: string;
+   customer_name: string;
+   email: string;
+   event_date: string;
+   order_details: {
+     items: Array<{
+       name: string;
+       price: number;
+       quantity: number;
+     }>;
+     total: number;
+     subtotal: number;
+     tax: number;
+     tax_percentage?: number;
+     tax_amount?: number;
+   };
+   total_amount: number;
+   deposit_amount: number;
+   balance_amount: number;
+   order_status: string;
+   balance_paid_at?: string;
+ }
 
 type PaymentType = 'deposit' | 'full' | 'custom' | 'balance';
 
@@ -221,10 +223,10 @@ export default function Checkout() {
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">{formatCurrency(order.order_details.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Tax</span>
-                <span className="font-medium">{formatCurrency(order.order_details.tax)}</span>
-              </div>
+               <div className="flex justify-between text-sm mb-2">
+                 <span className="text-gray-600">Tax {order.order_details.tax_percentage ? `(${order.order_details.tax_percentage}%)` : ''}</span>
+                 <span className="font-medium">{formatCurrency(order.order_details.tax_amount || order.order_details.tax)}</span>
+               </div>
               <div className="flex justify-between text-base border-t pt-2 font-semibold">
                 <span>Total</span>
                 <span>{formatCurrency(order.total_amount)}</span>
