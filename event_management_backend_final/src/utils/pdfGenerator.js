@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const logger = setupLogger();
+const ZELLE_EMAIL = 'jnvcommercials@gmail.com';
 
 class PDFGenerator {
   static addWatermarkLogo(doc) {
@@ -66,13 +67,13 @@ class PDFGenerator {
         logger.warn('Logo image not found, continuing with placeholder');
       }
 
-      // Invoice Title - Large, prominent
+      // Receipt Title - Large, prominent
       doc.fontSize(36).font('Helvetica-Bold').fillColor('#333333');
-      doc.text('Invoice', 350, 50, { align: 'left' });
+      doc.text('Receipt', 350, 50, { align: 'left' });
 
-      // Invoice details - Right aligned
+      // Receipt details - Right aligned
       doc.fontSize(12).font('Helvetica');
-      doc.text(`Invoice #${data.invoiceNumber}`, 350, 100, { align: 'left' });
+      doc.text(`Receipt #${data.invoiceNumber}`.replace('INV-', 'RC-'), 350, 100, { align: 'left' });
       doc.text(`${new Date().toLocaleDateString()}`, 350, 130, { align: 'left' });
       
       // Bill To section
@@ -107,14 +108,25 @@ class PDFGenerator {
         }
       }
       
-      // Always display email if exists
-      if (data.customerInfo.email) {
-        doc.text(data.customerInfo.email, 50, yPos);
-        yPos += 20;
-      }
+       // Always display email if exists
+       if (data.customerInfo.email) {
+         doc.text(data.customerInfo.email, 50, yPos);
+         yPos += 20;
+       }
 
-      // Create a clean table with column headers
-      const tableTop = 280;
+       // Event Details section
+       doc.fontSize(14).font('Helvetica-Bold').fillColor('#333333');
+       doc.text('Event Details', 50, yPos + 10);
+
+       yPos += 35;
+       doc.fontSize(12).font('Helvetica').fillColor('#333333');
+       doc.text(`Event Date: ${data.orderDetails.eventDate}`, 50, yPos);
+       yPos += 20;
+       doc.text(`Event Time: ${data.orderDetails.eventTime}`, 50, yPos);
+        yPos += 20;
+
+        // Create a clean table with column headers
+        const tableTop = yPos + 20;
       const colHeaders = ['Quantity', 'Description', 'Unit Price', 'Amount'];
       const colWidths = [80, 250, 100, 100];
       const colPos = [50, 130, 380, 480];
@@ -191,6 +203,9 @@ class PDFGenerator {
       // Payment method
       y += 25;
       doc.text(`Payment: ${data.paymentInfo ? data.paymentInfo.method : 'Credit Card'}`, 50, y);
+      y += 20;
+      doc.text('Alternate payment option: Zelle', 50, y);
+      doc.text(`Email: ${ZELLE_EMAIL}`, 50, y + 18);
 
       // Generate PDF buffer
       const pdfBuffer = await PDFGenerator.generatePDF(doc);
@@ -209,79 +224,81 @@ class PDFGenerator {
     }
   }
 
-  static generateInvoiceTemplate(orderData) {
-    return {
-      documentType: 'invoice',
-      invoiceNumber: `INV-${orderData.id}`,
-      companyInfo: {
-        name: 'JNV Events',
-        address: '123 Event Street, City, Country',
-        phone: '+1 234 567 8900',
-        email: 'info@jnvevents.com',
-      },
-      customerInfo: {
-        name: orderData.customer_name,
-        email: orderData.email,
-        phone: orderData.contact_number || 'N/A',
-      },
-      orderDetails: {
-        date: new Date().toLocaleDateString(),
-        eventDate: new Date(orderData.event_date).toLocaleDateString(),
-        services: orderData.order_details.items.map((item) => ({
-          name: item.name,
-          price: item.price,
-        })),
-        subtotal: orderData.order_details.subtotal,
-        tax: orderData.order_details.tax,
-        total: orderData.total_amount,
-      },
-      paymentInfo: {
-        depositAmount: orderData.deposit_amount,
-        balanceAmount: orderData.balance_amount,
-        totalAmount: orderData.total_amount,
-        paymentStatus: orderData.payment_status,
-      },
-    };
-  }
+   static generateInvoiceTemplate(orderData) {
+     return {
+       documentType: 'invoice',
+       invoiceNumber: `INV-${orderData.id}`,
+       companyInfo: {
+         name: 'JNV Events',
+         address: '123 Event Street, City, Country',
+         phone: '+1 234 567 8900',
+         email: 'info@jnvevents.com',
+       },
+       customerInfo: {
+         name: orderData.customer_name,
+         email: orderData.email,
+         phone: orderData.contact_number || 'N/A',
+       },
+       orderDetails: {
+         date: new Date().toLocaleDateString(),
+         eventDate: new Date(orderData.event_date).toLocaleDateString(),
+         eventTime: orderData.event_time || 'N/A',
+         services: orderData.order_details.items.map((item) => ({
+           name: item.name,
+           price: item.price,
+         })),
+         subtotal: orderData.order_details.subtotal,
+         tax: orderData.order_details.tax,
+         total: orderData.total_amount,
+       },
+       paymentInfo: {
+         depositAmount: orderData.deposit_amount,
+         balanceAmount: orderData.balance_amount,
+         totalAmount: orderData.total_amount,
+         paymentStatus: orderData.payment_status,
+       },
+     };
+   }
 
   static generateQuotationTemplate(orderData) {
     // Ensure we have a valid order ID
     const orderId = orderData.id || orderData._id || Date.now().toString();
     
-    return {
-      documentType: 'quotation',
-      quotationNumber: `Q-${orderId}`,
-      companyInfo: {
-        name: 'JNV Events',
-        address: '123 Event Street, City, Country',
-        phone: '+1 234 567 8900',
-        email: 'info@jnvevents.com',
-      },
-      customerInfo: {
-        name: orderData.customer_name,
-        email: orderData.email,
-        phone: orderData.contact_number || 'N/A',
-      },
-      orderDetails: {
-        date: new Date().toLocaleDateString(),
-        eventDate: new Date(orderData.event_date).toLocaleDateString(),
-        items: Array.isArray(orderData.order_details?.items) ? orderData.order_details.items : [{
-          name: 'Event Services',
-          price: orderData.total_amount,
-          quantity: 1,
-        }],
-        subtotal: orderData.order_details?.subtotal || orderData.total_amount,
-        tax: orderData.order_details?.tax || 0,
-        total: orderData.total_amount,
-      },
-      paymentInfo: {
-        depositAmount: orderData.deposit_amount,
-        balanceAmount: orderData.balance_amount,
-        totalAmount: orderData.total_amount,
-      },
-      terms: 'This quotation is valid for 30 days from the date of issue.',
-      validity: '30 days',
-    };
+      return {
+       documentType: 'invoice',
+       quotationNumber: `INV-${orderId}`,
+       companyInfo: {
+         name: 'JNV Events',
+         address: '123 Event Street, City, Country',
+         phone: '+1 234 567 8900',
+         email: 'info@jnvevents.com',
+       },
+       customerInfo: {
+         name: orderData.customer_name,
+         email: orderData.email,
+         phone: orderData.contact_number || 'N/A',
+       },
+       orderDetails: {
+         date: new Date().toLocaleDateString(),
+         eventDate: new Date(orderData.event_date).toLocaleDateString(),
+         eventTime: orderData.event_time || 'N/A',
+         items: Array.isArray(orderData.order_details?.items) ? orderData.order_details.items : [{
+           name: 'Event Services',
+           price: orderData.total_amount,
+           quantity: 1,
+         }],
+         subtotal: orderData.order_details?.subtotal || orderData.total_amount,
+         tax: orderData.order_details?.tax || 0,
+         total: orderData.total_amount,
+       },
+       paymentInfo: {
+         depositAmount: orderData.deposit_amount,
+         balanceAmount: orderData.balance_amount,
+         totalAmount: orderData.total_amount,
+       },
+       terms: 'This invoice is valid for 30 days from the date of issue.',
+       validity: '30 days',
+     };
   }
 
   static async generateQuotationPDF(data) {
@@ -301,13 +318,13 @@ class PDFGenerator {
         logger.warn('Logo image not found, continuing with placeholder');
       }
 
-      // Quotation Title - Large, prominent
+      // Invoice Title - Large, prominent
       doc.fontSize(36).font('Helvetica-Bold').fillColor('#333333');
-      doc.text('Quotation', 350, 50, { align: 'left' });
+      doc.text('Invoice', 350, 50, { align: 'left' });
 
-      // Quotation details - Right aligned
+      // Invoice details - Right aligned
       doc.fontSize(12).font('Helvetica');
-      doc.text(`Quotation #${data.quotationNumber}`, 350, 100, { align: 'left' });
+      doc.text(`Invoice #${data.quotationNumber}`, 350, 100, { align: 'left' });
       doc.text(`${new Date().toLocaleDateString()}`, 350, 130, { align: 'left' });
       
       // Bill To section
@@ -326,8 +343,22 @@ class PDFGenerator {
         yPos += 20;
       }
 
-      // Create a clean table with column headers
-      const tableTop = yPos + 20;
+      // Event Details - show event date and time on invoice PDF
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#333333');
+      doc.text('Event Details', 50, yPos + 10);
+      yPos += 35;
+      doc.fontSize(12).font('Helvetica').fillColor('#333333');
+      if (data.orderDetails.eventDate) {
+        doc.text(`Event Date: ${data.orderDetails.eventDate}`, 50, yPos);
+        yPos += 20;
+      }
+      if (data.orderDetails.eventTime) {
+        doc.text(`Event Time: ${data.orderDetails.eventTime}`, 50, yPos);
+        yPos += 20;
+      }
+
+       // Create a clean table with column headers
+       const tableTop = yPos + 20;
       const colHeaders = ['Description', 'Quantity', 'Unit Price', 'Amount'];
       const colWidths = [250, 80, 100, 100];
       const colPos = [50, 300, 380, 480];
@@ -393,6 +424,12 @@ class PDFGenerator {
         doc.text(data.paymentLink, 50, y, { link: data.paymentLink });
       }
 
+      // Add alternate payment options
+      y += 25;
+      doc.fontSize(12).font('Helvetica').fillColor('#333333');
+      doc.text('Alternate payment option: Zelle', 50, y);
+      doc.text(`Email: ${ZELLE_EMAIL}`, 50, y + 18);
+
       // Add validity period
       y += 40;
       doc.fontSize(12).font('Helvetica').fillColor('#333333');
@@ -407,7 +444,7 @@ class PDFGenerator {
       
       y += 20;
       doc.fontSize(10).font('Helvetica').fillColor('#333333');
-      const termsText = `• Validity: This quote is valid for 30 days from the quotation date.
+     const termsText = `• Validity: This invoice is valid for 30 days from the invoice date.
 • Deposit: Above mentioned amount is required to confirm booking. Balance due before the event.
 • Cancellation: 30 days prior notice is required for free cancellation. Beyond that, cancellation charges will be applied depending on the number of days before the event.
 • Power Requirements: Client is responsible for arranging Electricity for the equipment.
@@ -425,15 +462,18 @@ class PDFGenerator {
       const pdfBuffer = await PDFGenerator.generatePDF(doc);
 
       // Upload to S3
-      const fileName = `documents/quotation-${Date.now()}.pdf`;
+      const fileName = `documents/invoice-${Date.now()}.pdf`;
       await uploadToS3(fileName, pdfBuffer, 'application/pdf');
 
       // Get public URL
       const publicUrl = getS3PublicUrl(fileName);
 
+      // Return both the public URL and the raw PDF buffer so callers can optionally
+      // persist the file locally (useful for dev/debugging) without re-generating.
       return {
         pdfUrl: publicUrl,
         paymentLink: data.paymentLink,
+        buffer: pdfBuffer,
       };
     } catch (error) {
       logger.error('Error generating quotation PDF:', error);

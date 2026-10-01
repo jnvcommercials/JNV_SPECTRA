@@ -82,7 +82,8 @@ class EmailService {
         customerName: order.customer_name,
         email: order.email,
         serviceType: order.order_details.items[0]?.name || 'Event Services',
-        eventDate: order.event_date,
+        eventDate: order.event_date ? new Date(order.event_date).toLocaleDateString() : '',
+        eventTime: order.event_time || 'N/A',
         amount: order.deposit_amount,
         paymentType: 'Deposit',
         quotationUrl: pdfUrl,
@@ -92,61 +93,11 @@ class EmailService {
         companyPhone: process.env.COMPANY_PHONE || 'N/A',
         items: order.order_details.items,
         total: order.total_amount,
+        zelleEmail: 'jnvcommercials@gmail.com',
       };
 
       // Compile the template with data
       const html = compiledTemplate(quotationData);
-      const attachments = pdfUrl
-        ? [
-          {
-            filename: 'quotation.pdf',
-            path: pdfUrl,
-          },
-        ]
-        : [];
-
-      if (!pdfUrl) {
-        logger.warn(`Quotation PDF URL missing for order ${order.id}. Sending email without attachment.`);
-      }
-
-      // Send email using Resend
-      await EmailService.sendCustomerEmailWithAdminCopy({
-        from: process.env.EMAIL_FROM,
-        to: order.email,
-        bcc: process.env.ADMIN_EMAIL,
-        subject: `Quotation for ${order.order_details.items[0]?.name || 'Event Services'} - ${order.customer_name}`,
-        html: html,
-        attachments,
-      }, 'quotation email');
-
-      logger.info(`Quotation email sent to ${order.email} and ${process.env.ADMIN_EMAIL}`);
-    } catch (error) {
-      logger.error('Error sending quotation email:', error);
-      throw new AppError('Error sending quotation email', 500);
-    }
-  }
-
-  static async sendInvoiceEmail(order, pdfUrl) {
-    try {
-      const templatePath = path.join(__dirname, '../templates/email/invoice.html');
-      const template = fs.readFileSync(templatePath, 'utf8');
-      const compiledTemplate = handlebars.compile(template);
-
-      const invoiceData = {
-        customerName: order.customer_name,
-        email: order.email,
-        serviceType: order.order_details.items[0]?.name || 'Event Services',
-        eventDate: new Date(order.event_date).toLocaleDateString(),
-        invoiceNumber: `INV-${order.id}`,
-        paymentDate: new Date().toLocaleDateString(),
-        paymentMethod: order.payment_option === 'online' ? 'Online Payment' : 'Offline Payment',
-        total: Number(order.total_amount).toFixed(2),
-        companyName: process.env.COMPANY_NAME || 'JNV Events',
-        companyEmail: process.env.COMPANY_EMAIL || 'info@jnvevents.com',
-        companyPhone: process.env.COMPANY_PHONE || '+1 352 773 2872',
-      };
-
-      const html = compiledTemplate(invoiceData);
       const attachments = pdfUrl
         ? [
           {
@@ -160,16 +111,69 @@ class EmailService {
         logger.warn(`Invoice PDF URL missing for order ${order.id}. Sending email without attachment.`);
       }
 
+      // Send email using Resend
       await EmailService.sendCustomerEmailWithAdminCopy({
         from: process.env.EMAIL_FROM,
         to: order.email,
         bcc: process.env.ADMIN_EMAIL,
-        subject: `Event Invoice : ${order.customer_name} : ${new Date(order.event_date).toLocaleDateString()}`,
+        subject: `Invoice for ${order.order_details.items[0]?.name || 'Event Services'} - ${order.customer_name}`,
         html: html,
         attachments,
       }, 'invoice email');
 
       logger.info(`Invoice email sent to ${order.email} and ${process.env.ADMIN_EMAIL}`);
+    } catch (error) {
+      logger.error('Error sending quotation email:', error);
+      throw new AppError('Error sending quotation email', 500);
+    }
+  }
+
+  static async sendInvoiceEmail(order, pdfUrl) {
+    try {
+      const templatePath = path.join(__dirname, '../templates/email/invoice.html');
+      const template = fs.readFileSync(templatePath, 'utf8');
+      const compiledTemplate = handlebars.compile(template);
+
+       const invoiceData = {
+         customerName: order.customer_name,
+         email: order.email,
+         serviceType: order.order_details.items[0]?.name || 'Event Services',
+         eventDate: new Date(order.event_date).toLocaleDateString(),
+         eventTime: order.event_time || 'N/A',
+         invoiceNumber: `INV-${order.id}`,
+         paymentDate: new Date().toLocaleDateString(),
+         paymentMethod: order.payment_option === 'online' ? 'Online Payment' : 'Offline Payment',
+         total: Number(order.total_amount).toFixed(2),
+         companyName: process.env.COMPANY_NAME || 'JNV Events',
+         companyEmail: process.env.COMPANY_EMAIL || 'info@jnvevents.com',
+         companyPhone: process.env.COMPANY_PHONE || '+1 352 773 2872',
+         zelleEmail: 'jnvcommercials@gmail.com',
+       };
+
+      const html = compiledTemplate(invoiceData);
+      const attachments = pdfUrl
+        ? [
+          {
+            filename: 'receipt.pdf',
+            path: pdfUrl,
+          },
+        ]
+        : [];
+
+      if (!pdfUrl) {
+        logger.warn(`Receipt PDF URL missing for order ${order.id}. Sending email without attachment.`);
+      }
+
+      await EmailService.sendCustomerEmailWithAdminCopy({
+        from: process.env.EMAIL_FROM,
+        to: order.email,
+        bcc: process.env.ADMIN_EMAIL,
+        subject: `Receipt for ${order.customer_name} : ${new Date(order.event_date).toLocaleDateString()}`,
+        html: html,
+        attachments,
+      }, 'receipt email');
+
+      logger.info(`Receipt email sent to ${order.email} and ${process.env.ADMIN_EMAIL}`);
     } catch (error) {
       logger.error('Error sending invoice email:', error);
       throw new AppError('Error sending invoice email', 500);

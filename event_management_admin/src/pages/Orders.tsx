@@ -118,6 +118,15 @@ export default function Orders() {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&apos;");
 
+  // Map internal payment_option values to user-friendly, capitalized labels
+  const paymentOptionLabel = (opt: string | undefined) => {
+    if (!opt) return "";
+    if (opt === 'paid_offline') return 'Offline';
+    if (opt === 'online') return 'Online';
+    // Fallback: capitalize first letter of unknown values
+    return opt.charAt(0).toUpperCase() + opt.slice(1);
+  };
+
   const buildExcelXml = (ordersToExport: Order[]) => {
     const headers = [
       "Order ID",
@@ -159,7 +168,8 @@ export default function Orders() {
         order.total_amount,
         order.deposit_amount,
         order.balance_amount,
-        order.payment_option,
+        // use friendly label in exports
+        paymentOptionLabel(order.payment_option),
         order.order_status,
         order.created_at,
       ];
@@ -347,15 +357,15 @@ export default function Orders() {
       toast({
         title: "Success",
         description: orderStatus === "paid" 
-          ? "Invoice downloaded successfully" 
-          : "Quotation downloaded successfully",
+          ? "Receipt downloaded successfully" 
+          : "Invoice downloaded successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
         description: orderStatus === "paid"
-          ? "Failed to download invoice"
-          : "Failed to download quotation",
+          ? "Failed to download receipt"
+          : "Failed to download invoice",
         variant: "destructive",
       });
     } finally {
@@ -437,12 +447,12 @@ export default function Orders() {
       await generateBalanceQuotation.mutateAsync(orderId);
       toast({
         title: "Success",
-        description: "Balance quotation generated successfully",
+        description: "Balance invoice generated successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate balance quotation",
+        description: error instanceof Error ? error.message : "Failed to generate balance invoice",
         variant: "destructive",
       });
     } finally {
@@ -588,9 +598,9 @@ export default function Orders() {
               <p className="text-sm text-muted-foreground">
                 {loadingAction?.action === 'mark_deposit_paid' && "Marking deposit as paid..."}
                 {loadingAction?.action === 'mark_paid' && "Marking order as paid..."}
-                {loadingAction?.action === 'download_invoice' && "Downloading invoice..."}
+                {loadingAction?.action === 'download_invoice' && "Downloading receipt..."}
                 {loadingAction?.action === 'cancel' && "Cancelling order..."}
-                {loadingAction?.action === 'generate_quotation' && "Generating quotation..."}
+                {loadingAction?.action === 'generate_quotation' && "Generating invoice..."}
                 {loadingAction?.action === 'generate_deposit_link' && "Generating deposit payment link..."}
                 {loadingAction?.action === 'generate_balance_link' && "Generating balance payment link..."}
               </p>
@@ -757,7 +767,7 @@ export default function Orders() {
                       <TableCell>{formatCurrency(order.total_amount)}</TableCell>
                       <TableCell>
                         <Badge variant={order.payment_option === "online" ? "default" : "secondary"}>
-                          {order.payment_option}
+                          {paymentOptionLabel(order.payment_option)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -894,7 +904,7 @@ export default function Orders() {
                                 ) : (
                                   <Download className="mr-2 h-4 w-4" />
                                 )}
-                                Download Invoice
+                                Download Receipt
                               </DropdownMenuItem>
                             )}
                             {order.order_status !== 'cancelled' && (
@@ -987,7 +997,7 @@ export default function Orders() {
                     <p>Service Type: {selectedOrder.service_type}</p>
                     <p>Event Date: {formatDate(selectedOrder.event_date)}</p>
                     <p>Status: {selectedOrder.order_status}</p>
-                    <p>Payment Option: {selectedOrder.payment_option}</p>
+                    <p>Payment Option: {paymentOptionLabel(selectedOrder.payment_option)}</p>
                   </div>
                 </div>
                 <div>

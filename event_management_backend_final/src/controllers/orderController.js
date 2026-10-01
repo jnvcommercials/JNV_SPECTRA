@@ -335,34 +335,34 @@ const generateQuotationTemplate = (orderData) => {
   const amount = isDeposit ? orderData.deposit_amount : orderData.total_amount;
   const paymentType = isDeposit ? 'Deposit' : 'Final';
 
-  return {
-    documentType: 'quotation',
-    companyInfo: {
-      name: 'Your Company Name',
-      address: 'Your Company Address',
-      contact: 'Your Contact Information',
-    },
-    customerInfo: {
-      name: orderData.customer_name,
-      email: orderData.email,
-      contact: orderData.contact_number,
-    },
-    orderDetails: {
-       serviceType: orderData.service_type,
-       eventDate: orderData.event_date,
-       items: orderData.order_details.items || [],
-       subtotal: orderData.order_details.subtotal || 0,
-       taxPercentage: orderData.order_details.tax_percentage || 0,
-       taxAmount: orderData.order_details.tax_amount || 0,
-       tax: orderData.order_details.tax_amount || 0, // For backward compatibility
-       total: amount,
-       paymentType: paymentType,
-       depositAmount: orderData.deposit_amount,
-       balanceAmount: orderData.balance_amount,
+   return {
+     documentType: 'invoice',
+     companyInfo: {
+       name: 'Your Company Name',
+       address: 'Your Company Address',
+       contact: 'Your Contact Information',
      },
-    paymentTerms: orderData.payment_option === 'online'
-      ? `${paymentType} Payment Link will be provided`
-      : `${paymentType} Payment to be made offline`,
+     customerInfo: {
+       name: orderData.customer_name,
+       email: orderData.email,
+       contact: orderData.contact_number,
+     },
+     orderDetails: {
+        serviceType: orderData.service_type,
+        eventDate: orderData.event_date,
+        items: orderData.order_details.items || [],
+        subtotal: orderData.order_details.subtotal || 0,
+        taxPercentage: orderData.order_details.tax_percentage || 0,
+        taxAmount: orderData.order_details.tax_amount || 0,
+        tax: orderData.order_details.tax_amount || 0, // For backward compatibility
+        total: amount,
+        paymentType: paymentType,
+        depositAmount: orderData.deposit_amount,
+        balanceAmount: orderData.balance_amount,
+      },
+     paymentTerms: orderData.payment_option === 'online'
+       ? `${paymentType} Payment Link will be provided`
+       : `${paymentType} Payment to be made Offline`,
     validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
     termsAndConditions: 'Standard terms and conditions apply',
   };
@@ -371,7 +371,7 @@ const generateQuotationTemplate = (orderData) => {
 // Helper function to generate invoice template
 const generateInvoiceTemplate = (order) => {
   return {
-    documentType: 'invoice',
+    documentType: 'receipt',
     companyInfo: {
       name: 'Your Company Name',
       address: 'Your Company Address',
@@ -806,6 +806,30 @@ const markDepositAsPaid = async (req, res, next) => {
   }
 };
 
+// Regenerate quotation template & PDF for an order (dev helper)
+const regenerateQuotation = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!id) throw new AppError('Order ID is required', 400);
+
+    const orderData = await order.findById(id);
+    if (!orderData) throw new AppError('Order not found', 404);
+
+    // Build fresh quotation template including event time
+    const quotationTemplate = PDFGenerator.generateQuotationTemplate({ ...orderData, isDeposit: false });
+
+    // Update order with new quotation template
+    await order.update(id, { quotation_template: quotationTemplate });
+
+    // Generate PDF for quotation
+    const pdfResult = await PDFGenerator.generateQuotationPDF(quotationTemplate);
+
+    res.status(200).json({ status: 'success', data: { pdfResult } });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Mark full payment as paid
 const markFullPaymentAsPaid = async (req, res, next) => {
   try {
@@ -1050,4 +1074,5 @@ module.exports = {
   generateCheckoutPaymentLink,
   sendBalanceLinkEmail,
   updatePaymentLink,
-}; 
+  regenerateQuotation,
+};

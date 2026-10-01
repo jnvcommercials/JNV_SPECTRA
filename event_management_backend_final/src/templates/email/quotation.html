@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Quotation from {{companyName}}</title>
+    <title>Your Invoice from {{companyName}}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,7 +46,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Quotation</h1>
+        <h1>Invoice</h1>
     </div>
     
     <div class="content">
@@ -54,7 +54,13 @@
         
         <p>Thank you for choosing {{companyName}} for your event.</p>
         
-        <p>We have prepared a detailed quotation for your event, which is attached to this email. The quotation includes:</p>
+        <p>We have prepared a detailed invoice for your event, which is attached to this email. The invoice includes:</p>
+        <div class="invoice-details">
+            <h3>Event Details</h3>
+            <p>Service Type: {{serviceType}}</p>
+            <p>Event Date: {{eventDate}}</p>
+            <p>Event Time: {{eventTime}}</p>
+        </div>
         <ul>
             {{#each items}}
             <li>{{name}} - ${{price}} (Quantity: {{quantity}})</li>
@@ -62,12 +68,13 @@
         </ul>
         
         <p>Total Amount: ${{total}}</p>
+        <p>Alternate Payment Option: Zelle - {{zelleEmail}}</p>
         
         {{#if paymentLink}}
         <p>To proceed with your booking, please click the button below to continue to checkout:</p>
         <a href="{{paymentLink}}" class="button">Proceed to Checkout</a>
         {{else}}
-        <p>Please review the quotation and let us know if you have any questions or would like to proceed with the booking.</p>
+        <p>Please review the invoice and let us know if you have any questions or would like to proceed with the booking.</p>
         {{/if}}
         
         <p>Best regards,<br>{{companyName}} Team</p>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Invoice from {{companyName}}</title>
+    <title>Your Receipt from {{companyName}}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,7 +44,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Payment Confirmation</h1>
+        <h1>Receipt</h1>
     </div>
     
     <div class="content">
@@ -53,14 +53,22 @@
         <p>Thank you for your payment.</p>
         
         <div class="invoice-details">
-            <h3>Invoice Details</h3>
-            <p>Invoice Number: {{invoiceNumber}}</p>
+            <h3>Receipt Details</h3>
+            <p>Receipt Number: {{invoiceNumber}}</p>
             <p>Payment Date: {{paymentDate}}</p>
             <p>Payment Method: {{paymentMethod}}</p>
+            <p>Alternate Payment Option: Zelle - {{zelleEmail}}</p>
             <p>Amount Paid: ${{total}}</p>
         </div>
-        
-        <p>A detailed invoice has been attached to this email for your records.</p>
+
+        <div class="invoice-details">
+            <h3>Event Details</h3>
+            <p>Service Type: {{serviceType}}</p>
+            <p>Event Date: {{eventDate}}</p>
+            <p>Event Time: {{eventTime}}</p>
+        </div>
+
+        <p>A detailed receipt has been attached to this email for your records.</p>
         
         <p>We look forward to serving you at your event. If you have any questions or need to make any changes to your booking, please don't hesitate to contact us.</p>
         
