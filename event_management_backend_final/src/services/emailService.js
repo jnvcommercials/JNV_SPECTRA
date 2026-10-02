@@ -8,6 +8,66 @@ const { DateTime } = require('luxon');
 
 const logger = setupLogger();
 
+const parseLocalDate = (value) => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    const datePart = raw.includes('T') ? raw.split('T')[0] : raw;
+    const dateOnly = datePart.match(/^\d{4}-\d{2}-\d{2}$/);
+    if (dateOnly) {
+      const [year, month, day] = dateOnly[0].split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const format12HourTime = (value) => {
+  if (!value) return 'N/A';
+
+  const raw = String(value).trim();
+  if (!raw) return 'N/A';
+
+  const explicitMatch = raw.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (explicitMatch) {
+    let hour = Number(explicitMatch[1]);
+    const minute = explicitMatch[2];
+    let meridiem = (explicitMatch[3] || '').toUpperCase();
+
+    if (meridiem) {
+      if (meridiem === 'AM' && hour === 12) hour = 0;
+      if (meridiem === 'PM' && hour < 12) hour += 12;
+    } else if (hour >= 12) {
+      meridiem = 'PM';
+      if (hour > 12) hour -= 12;
+    } else {
+      meridiem = 'AM';
+      if (hour === 0) hour = 12;
+    }
+
+    return `${hour}:${minute} ${meridiem}`;
+  }
+
+  const isoMatch = raw.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (isoMatch) {
+    let hour = Number(isoMatch[1]);
+    const minute = isoMatch[2];
+    let meridiem = hour >= 12 ? 'PM' : 'AM';
+    if (hour > 12) hour -= 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${meridiem}`;
+  }
+
+  return raw;
+};
+
 class EmailService {
   static uniqueRecipients(...groups) {
     const recipients = groups
@@ -82,8 +142,8 @@ class EmailService {
         customerName: order.customer_name,
         email: order.email,
         serviceType: order.order_details.items[0]?.name || 'Event Services',
-        eventDate: order.event_date ? new Date(order.event_date).toLocaleDateString() : '',
-        eventTime: order.event_time || 'N/A',
+        eventDate: order.event_date ? parseLocalDate(order.event_date)?.toLocaleDateString() || '' : '',
+        eventTime: format12HourTime(order.event_time),
         amount: order.deposit_amount,
         paymentType: 'Deposit',
         quotationUrl: pdfUrl,
@@ -138,8 +198,8 @@ class EmailService {
          customerName: order.customer_name,
          email: order.email,
          serviceType: order.order_details.items[0]?.name || 'Event Services',
-         eventDate: new Date(order.event_date).toLocaleDateString(),
-         eventTime: order.event_time || 'N/A',
+         eventDate: parseLocalDate(order.event_date)?.toLocaleDateString() || '',
+         eventTime: format12HourTime(order.event_time),
          invoiceNumber: `INV-${order.id}`,
          paymentDate: new Date().toLocaleDateString(),
          paymentMethod: order.payment_option === 'online' ? 'Online Payment' : 'Offline Payment',
@@ -168,7 +228,7 @@ class EmailService {
         from: process.env.EMAIL_FROM,
         to: order.email,
         bcc: process.env.ADMIN_EMAIL,
-        subject: `Receipt for ${order.customer_name} : ${new Date(order.event_date).toLocaleDateString()}`,
+        subject: `Receipt for ${order.customer_name} : ${parseLocalDate(order.event_date)?.toLocaleDateString() || ''}`,
         html: html,
         attachments,
       }, 'receipt email');
